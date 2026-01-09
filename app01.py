@@ -19,38 +19,102 @@ def inject_css_light():
     st.markdown(
         """
         <style>
-        .stApp { background: #ffffff; color: #0f172a; }
+        /* =========================
+           Global tokens (Light)
+        ========================= */
+        :root {
+            --bg: #ffffff;
+            --surface: #ffffff;
+            --surface-2: #f8fafc;
+            --border: rgba(15,23,42,0.10);
+            --border-2: rgba(15,23,42,0.08);
+
+            --text: #0f172a;          /* slate-900 */
+            --text-strong: #0b1220;
+            --text-muted: rgba(15,23,42,0.68);
+
+            --primary: #2563eb;       /* blue-600 */
+            --danger: #ef4444;        /* red-500 */
+            --warning: #f59e0b;       /* amber-500 */
+            --success: #16a34a;       /* green-600 */
+
+            --shadow: 0 10px 22px rgba(15,23,42,0.06);
+            --radius-lg: 18px;
+            --radius-md: 16px;
+            --radius-sm: 12px;
+        }
+
+        /* App background */
+        .stApp {
+            background: var(--bg) !important;
+            color: var(--text) !important;
+        }
+
+        /* Container padding */
         .block-container { padding-top: 2rem; padding-bottom: 2rem; }
 
-        .big-title { font-size: 54px; font-weight: 900; margin-bottom: 4px; color: #0b1220; letter-spacing: -1px; }
-        .subtitle { color: rgba(15,23,42,0.65); font-size: 16px; margin-bottom: 18px; }
-        h1, h2, h3, h4 { letter-spacing: -0.4px; color: #0b1220; }
+        /* Ensure all text defaults to dark (fix black-on-black from some themes) */
+        html, body, [class*="st-"], p, span, div, label {
+            color: var(--text) !important;
+        }
+
+        /* Titles */
+        .big-title {
+            font-size: 54px;
+            font-weight: 900;
+            margin-bottom: 4px;
+            color: var(--text-strong) !important;
+            letter-spacing: -1px;
+        }
+        .subtitle {
+            color: var(--text-muted) !important;
+            font-size: 16px;
+            margin-bottom: 18px;
+        }
+        h1, h2, h3, h4 {
+            letter-spacing: -0.4px;
+            color: var(--text-strong) !important;
+        }
+
+        /* =========================
+           Sidebar
+        ========================= */
+        section[data-testid="stSidebar"] {
+            background: var(--surface-2) !important;
+            border-right: 1px solid var(--border-2) !important;
+        }
+        section[data-testid="stSidebar"] * {
+            color: var(--text) !important;
+        }
+
+        /* =========================
+           Panels / Cards
+        ========================= */
+        .panel {
+            border: 1px solid var(--border);
+            background: var(--surface) !important;
+            border-radius: var(--radius-lg);
+            padding: 18px;
+            box-shadow: var(--shadow);
+        }
 
         .kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 8px; }
         .kpi-card {
-            border: 1px solid rgba(15,23,42,0.10);
-            background: #ffffff;
-            border-radius: 16px;
+            border: 1px solid var(--border);
+            background: var(--surface) !important;
+            border-radius: var(--radius-md);
             padding: 18px 18px 14px 18px;
-            box-shadow: 0 10px 22px rgba(15,23,42,0.06);
+            box-shadow: var(--shadow);
             min-height: 110px;
         }
-        .kpi-title { font-size: 14px; color: rgba(15,23,42,0.62); margin-bottom: 10px; }
-        .kpi-value { font-size: 44px; font-weight: 900; line-height: 1.0; color: #0b1220; }
-        .kpi-sub { margin-top: 10px; font-size: 12px; color: rgba(15,23,42,0.55); }
-
-        .panel {
-            border: 1px solid rgba(15,23,42,0.10);
-            background: #ffffff;
-            border-radius: 18px;
-            padding: 18px;
-            box-shadow: 0 10px 22px rgba(15,23,42,0.06);
-        }
+        .kpi-title { font-size: 14px; color: var(--text-muted) !important; margin-bottom: 10px; }
+        .kpi-value { font-size: 44px; font-weight: 900; line-height: 1.0; color: var(--text-strong) !important; }
+        .kpi-sub { margin-top: 10px; font-size: 12px; color: rgba(15,23,42,0.55) !important; }
 
         .cust-card {
-            border: 1px solid rgba(15,23,42,0.10);
-            background: #ffffff;
-            border-radius: 16px;
+            border: 1px solid var(--border);
+            background: var(--surface) !important;
+            border-radius: var(--radius-md);
             padding: 16px;
             margin-bottom: 12px;
             box-shadow: 0 8px 18px rgba(15,23,42,0.05);
@@ -62,30 +126,105 @@ def inject_css_light():
             align-items: center;
         }
 
+        .muted { color: var(--text-muted) !important; font-size: 13px; }
+
+        /* Tag - make contrast clear */
         .tag {
             display: inline-block;
             padding: 4px 10px;
             border-radius: 10px;
-            background: rgba(46, 204, 113, 0.12);
-            color: #1f8f4e;
-            border: 1px solid rgba(46, 204, 113, 0.28);
+            background: rgba(22, 163, 74, 0.10) !important;
+            color: #166534 !important; /* green-800 */
+            border: 1px solid rgba(22, 163, 74, 0.22) !important;
             font-weight: 800;
             font-size: 12px;
             margin-left: 8px;
         }
 
-        .muted { color: rgba(15,23,42,0.62); font-size: 13px; }
+        /* =========================
+           Streamlit widgets (critical)
+           Fix: some widgets inherit dark theme styles and become black-on-black.
+        ========================= */
 
-        section[data-testid="stSidebar"] {
-            background: #f8fafc;
-            border-right: 1px solid rgba(15,23,42,0.08);
+        /* Inputs (selectbox, text_input, multiselect, etc.) */
+        div[data-baseweb="input"] input,
+        div[data-baseweb="textarea"] textarea {
+            background: #ffffff !important;
+            color: var(--text) !important;
+            border: 1px solid var(--border) !important;
+            border-radius: 12px !important;
         }
 
-        button[kind="secondary"], button[kind="primary"] { border-radius: 12px !important; }
+        /* Selectbox / Multiselect */
+        div[data-baseweb="select"] > div {
+            background: #ffffff !important;
+            color: var(--text) !important;
+            border: 1px solid var(--border) !important;
+            border-radius: 12px !important;
+        }
+        div[data-baseweb="select"] span {
+            color: var(--text) !important;
+        }
+
+        /* Dropdown menu */
+        ul[role="listbox"] {
+            background: #ffffff !important;
+            color: var(--text) !important;
+            border: 1px solid var(--border) !important;
+        }
+        ul[role="listbox"] * {
+            color: var(--text) !important;
+        }
+
+        /* Slider */
+        div[data-testid="stSlider"] * {
+            color: var(--text) !important;
+        }
+
+        /* Buttons */
+        button[kind="secondary"], button[kind="primary"] {
+            border-radius: 12px !important;
+        }
+        /* Make secondary button readable on white */
+        button[kind="secondary"] {
+            background: #ffffff !important;
+            color: var(--text) !important;
+            border: 1px solid var(--border) !important;
+        }
+        /* Primary button readable */
+        button[kind="primary"] {
+            background: var(--primary) !important;
+            color: #ffffff !important;
+            border: 1px solid rgba(37,99,235,0.25) !important;
+        }
+
+        /* Metric component */
+        div[data-testid="stMetric"] {
+            background: transparent !important;
+        }
+        div[data-testid="stMetric"] * {
+            color: var(--text) !important;
+        }
+        div[data-testid="stMetric"] label {
+            color: var(--text-muted) !important;
+        }
+
+        /* Dataframe/table */
+        .stDataFrame, .stTable {
+            background: #ffffff !important;
+            color: var(--text) !important;
+        }
+
+        /* Alerts */
+        div[data-testid="stAlert"] {
+            border-radius: 14px !important;
+        }
+
         </style>
         """,
         unsafe_allow_html=True
     )
+
 
 inject_css_light()
 
@@ -690,3 +829,4 @@ elif st.session_state.page == "detail":
     page_detail(df)
 else:
     page_dashboard(df)
+
