@@ -90,11 +90,8 @@ def inject_css_light():
 inject_css_light()
 
 # =========================
-# 2) 실데이터 경로/설정 (여기만 바꾸면 됨)
+# 2) Config (실데이터 스키마 기준)
 # =========================
-DATA_PATH = r"C:\Users\campus4D055\Desktop\python_prac\프로젝트\프로젝트5\code\대시보드에 사용할 데이터.csv"   # ✅ 여기를 실제 파일 경로로 변경
-DATA_ENCODING = "cp949"                  # ✅ cp949 고정
-
 RECO_PRODUCT_MAP = {
     "요구불예금좌수": 0,
     "거치식예금좌수": 1,
@@ -122,36 +119,7 @@ DEFAULT_RADAR_AMOUNT_COLS = [
 META_COLS = ["업종_중분류", "사업장_시도", "사업장_시군구", "법인_고객등급", "전담고객여부", "RFMP_Segment"]
 
 # =========================
-# 3) Data load (코드 내부에서만 로드)
-# =========================
-@st.cache_data(show_spinner=True)
-def load_real_data_fixed() -> pd.DataFrame:
-    df = pd.read_csv(DATA_PATH, encoding=DATA_ENCODING)
-
-    # 필수 컬럼 체크
-    required = ["segment", "기준년월", "churn_prob_6m", "추천상품_top1", "추천상품_top2",
-                "Score_R", "Score_F", "Score_M", "Score_P"]
-    missing = [c for c in required if c not in df.columns]
-    if missing:
-        # 필수라고 해도, 실제 배포에서 안 터지게 최소한의 안전 처리(없는 건 생성)
-        for c in missing:
-            df[c] = np.nan if c not in ["추천상품_top1", "추천상품_top2"] else ""
-
-    df["segment"] = df["segment"].astype(float).astype(int)
-    df["customer_id"] = df["segment"].apply(lambda x: f"S{x}")
-
-    df["기준년월_dt"] = pd.to_datetime(df["기준년월"], errors="coerce")
-    df.replace([np.inf, -np.inf], np.nan, inplace=True)
-    return df
-
-try:
-    df_all = load_real_data_fixed()
-except Exception as e:
-    st.error(f"데이터 로드 실패: {e}")
-    st.stop()
-
-# =========================
-# 4) Navigation state
+# 3) Session State (router)
 # =========================
 if "page" not in st.session_state:
     st.session_state.page = "dashboard"
@@ -159,6 +127,8 @@ if "selected_customer_id" not in st.session_state:
     st.session_state.selected_customer_id = None
 if "selected_month" not in st.session_state:
     st.session_state.selected_month = None
+if "_df_real" not in st.session_state:
+    st.session_state["_df_real"] = None
 
 def goto(page: str, customer_id: str | None = None):
     st.session_state.page = page
@@ -166,18 +136,50 @@ def goto(page: str, customer_id: str | None = None):
         st.session_state.selected_customer_id = customer_id
 
 # =========================
-# 5) 월 선택(기준년월)
+# 4) Data load (업로드 기반 + cp949 우선)
 # =========================
-months = df_all["기준년월_dt"].dropna().sort_values().unique()
-if len(months) == 0:
-    st.error("기준년월 파싱 실패: 기준년월 형식을 확인하세요.")
-    st.stop()
+def _postprocess(df: pd.DataFrame) -> pd.DataFrame:
+    if "segment" not in df.columns:
+        raise ValueError("필수 컬럼 segment 가 없습니다.")
+    if "기준년월" not in df.columns:
+        raise ValueError("필수 컬럼 기준년월 이 없습니다.")
 
-if st.session_state.selected_month is None:
-    st.session_state.selected_month = months[-1]
+    df["segment"] = df["segment"].astype(float).astype(int)
+    df["customer_id"] = df["segment"].apply(lambda x: f"S{x}")
+
+    df["기준년월_dt"] = pd.to_datetime(df["기준년월"], errors="coerce")
+
+    # 안전 처리
+    for c in ["추천상품_top1", "추천상품_top2"]:
+        if c not in df.columns:
+            df[c] = ""
+    if "churn_prob_6m" not in df.columns:
+        df["churn_prob_6m"] = np.nan
+    for c in ["Score_R", "Score_F", "Score_M", "Score_P"]:
+        if c not in df.columns:
+            df[c] = np.nan
+
+    df.replace([np.inf, -np.inf], np.nan, inplace=True)
+    return df
+
+@st.cache_data(show_spinner=False)
+def read_uploaded_csv(file_bytes: bytes) -> tuple[pd.DataFrame, str]:
+    """
+    cp949 -> euc-kr -> utf-8-sig -> utf-8 순으로 시도.
+    성공한 인코딩을 함께 반환.
+    """
+    last_err = None
+    for enc in ["cp949", "euc-kr", "utf-8-sig", "utf-8"]:
+        try:
+            df = pd.read_csv(pd.io.common.BytesIO(file_bytes), encoding=enc)
+            df = _postprocess(df)
+            return df, enc
+        except Exception as e:
+            last_err = e
+    raise last_err
 
 # =========================
-# 6) UI Utils
+# 5) UI Utils
 # =========================
 def kpi_cards(risk_count: int, total: int, avg_risk: float, top1_share: float):
     st.markdown(
@@ -233,11 +235,20 @@ def gauge_percent(value_0_1: float, title: str, subtitle: str):
         value=v * 100,
         number={"suffix": "%"},
         title={"text": f"{title}<br><span style='font-size:12px;color:rgba(15,23,42,0.62)'>{subtitle}</span>"},
-        gauge={"axis": {"range": [0, 100]}, "bar": {"color": "#2563eb"},
-               "bgcolor": "#ffffff", "borderwidth": 1, "bordercolor": "rgba(15,23,42,0.10)"}
+        gauge={
+            "axis": {"range": [0, 100]},
+            "bar": {"color": "#2563eb"},
+            "bgcolor": "#ffffff",
+            "borderwidth": 1,
+            "bordercolor": "rgba(15,23,42,0.10)",
+        }
     ))
-    fig.update_layout(margin=dict(l=10, r=10, t=40, b=10), height=230,
-                      paper_bgcolor="#ffffff", plot_bgcolor="#ffffff")
+    fig.update_layout(
+        margin=dict(l=10, r=10, t=40, b=10),
+        height=230,
+        paper_bgcolor="#ffffff",
+        plot_bgcolor="#ffffff",
+    )
     st.plotly_chart(fig, use_container_width=True)
 
 def gauge_score(value: float, title: str, subtitle: str, min_v: float = 1, max_v: float = 5):
@@ -248,11 +259,20 @@ def gauge_score(value: float, title: str, subtitle: str, min_v: float = 1, max_v
         value=v,
         number={"suffix": ""},
         title={"text": f"{title}<br><span style='font-size:12px;color:rgba(15,23,42,0.62)'>{subtitle}</span>"},
-        gauge={"axis": {"range": [min_v, max_v]}, "bar": {"color": "#2563eb"},
-               "bgcolor": "#ffffff", "borderwidth": 1, "bordercolor": "rgba(15,23,42,0.10)"}
+        gauge={
+            "axis": {"range": [min_v, max_v]},
+            "bar": {"color": "#2563eb"},
+            "bgcolor": "#ffffff",
+            "borderwidth": 1,
+            "bordercolor": "rgba(15,23,42,0.10)",
+        }
     ))
-    fig.update_layout(margin=dict(l=10, r=10, t=40, b=10), height=230,
-                      paper_bgcolor="#ffffff", plot_bgcolor="#ffffff")
+    fig.update_layout(
+        margin=dict(l=10, r=10, t=40, b=10),
+        height=230,
+        paper_bgcolor="#ffffff",
+        plot_bgcolor="#ffffff",
+    )
     st.plotly_chart(fig, use_container_width=True)
 
 def radar_amounts(row: pd.Series, df_scope: pd.DataFrame, amount_cols: list[str]):
@@ -322,17 +342,23 @@ def make_comments_real(row: pd.Series) -> list[str]:
     return comments[:3]
 
 # =========================
-# 7) Sidebar (데이터 로드 UI 제거, 월/메뉴만)
+# 6) Sidebar: 업로드 + 메뉴
 # =========================
 with st.sidebar:
-    st.markdown("## 기준 설정")
-    selected_month = st.selectbox(
-        "기준년월 선택",
-        options=list(months),
-        index=list(months).index(st.session_state.selected_month),
-        format_func=lambda x: pd.to_datetime(x).strftime("%Y-%m"),
-    )
-    st.session_state.selected_month = selected_month
+    st.markdown("## 데이터 업로드")
+    uploaded = st.file_uploader("CSV 업로드 (cp949 가능)", type=["csv"])
+    st.caption("업로드 후 자동으로 읽습니다. (cp949 → euc-kr → utf-8-sig 순 자동 시도)")
+
+    if uploaded is not None:
+        try:
+            df_loaded, used_enc = read_uploaded_csv(uploaded.getvalue())
+            st.session_state["_df_real"] = df_loaded
+            st.session_state["page"] = "dashboard"
+            st.session_state["selected_customer_id"] = None
+            st.success(f"로드 성공 (encoding: {used_enc}, rows: {len(df_loaded):,}, cols: {df_loaded.shape[1]})")
+        except Exception as e:
+            st.session_state["_df_real"] = None
+            st.error(f"데이터 로드 실패: {e}")
 
     st.markdown("---")
     st.markdown("## 메뉴")
@@ -344,9 +370,36 @@ with st.sidebar:
         goto("detail")
 
     st.markdown("---")
-    st.caption("배포형 내부 업무 UI (CSV는 코드 내 경로에서 로드).")
+    st.caption("배포형 UI: 업로드 기반으로 즉시 사용 가능합니다.")
 
-# 선택 월 df
+# 업로드 전이면 stop
+if st.session_state["_df_real"] is None:
+    st.warning("좌측 사이드바에서 CSV 파일을 업로드해주세요.")
+    st.stop()
+
+df_all = st.session_state["_df_real"].copy()
+
+# =========================
+# 7) 월 선택 (업로드된 데이터 기준)
+# =========================
+months = df_all["기준년월_dt"].dropna().sort_values().unique()
+if len(months) == 0:
+    st.error("기준년월 파싱 실패: 기준년월 형식을 확인하세요.")
+    st.stop()
+
+if st.session_state.selected_month is None or st.session_state.selected_month not in months:
+    st.session_state.selected_month = months[-1]
+
+with st.sidebar:
+    st.markdown("## 기준월")
+    selected_month = st.selectbox(
+        "기준년월 선택",
+        options=list(months),
+        index=list(months).index(st.session_state.selected_month),
+        format_func=lambda x: pd.to_datetime(x).strftime("%Y-%m"),
+    )
+    st.session_state.selected_month = selected_month
+
 df = df_all[df_all["기준년월_dt"] == st.session_state.selected_month].copy()
 if df.empty:
     st.warning("선택한 기준년월에 해당하는 데이터가 없습니다. 다른 월을 선택하세요.")
@@ -439,7 +492,7 @@ def page_dashboard(df: pd.DataFrame):
         st.write(
             f"- 기준 {threshold:.2f}에서 **{len(flagged)}개 세그먼트**가 관리 대상입니다.\n"
             f"- 평균 이탈확률은 **{df['churn_prob_6m'].fillna(0).mean():.2f}** 입니다.\n"
-            f"- 추천상품별 고객 리스트에서 상품별 대상자 목록을 확인하세요."
+            f"- 추천상품별 리스트에서 상품별 대상자 목록을 확인하세요."
         )
         st.markdown("</div>", unsafe_allow_html=True)
 
