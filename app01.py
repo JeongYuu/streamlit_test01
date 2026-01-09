@@ -19,211 +19,140 @@ def inject_css_light():
     st.markdown(
         """
         <style>
-        /* =========================
-           Global tokens (Light)
-        ========================= */
-        :root {
-            --bg: #ffffff;
-            --surface: #ffffff;
-            --surface-2: #f8fafc;
-            --border: rgba(15,23,42,0.10);
-            --border-2: rgba(15,23,42,0.08);
+        :root{
+            --bg:#ffffff;
+            --surface:#ffffff;
+            --surface-2:#f8fafc;
+            --border:rgba(15,23,42,0.10);
 
-            --text: #0f172a;          /* slate-900 */
-            --text-strong: #0b1220;
-            --text-muted: rgba(15,23,42,0.68);
+            --text:#0f172a;
+            --text-strong:#0b1220;
+            --text-muted:rgba(15,23,42,0.68);
 
-            --primary: #2563eb;       /* blue-600 */
-            --danger: #ef4444;        /* red-500 */
-            --warning: #f59e0b;       /* amber-500 */
-            --success: #16a34a;       /* green-600 */
-
-            --shadow: 0 10px 22px rgba(15,23,42,0.06);
-            --radius-lg: 18px;
-            --radius-md: 16px;
-            --radius-sm: 12px;
+            --primary:#2563eb;
+            --shadow:0 10px 22px rgba(15,23,42,0.06);
+            --r-lg:18px;
+            --r-md:16px;
+            --r-sm:12px;
         }
 
-        /* App background */
-        .stApp {
-            background: var(--bg) !important;
-            color: var(--text) !important;
+        /* App / main */
+        .stApp{
+            background:var(--bg) !important;
+            color:var(--text) !important;
+        }
+        .block-container{
+            padding-top: 2rem;
+            padding-bottom: 2rem;
         }
 
-        /* Container padding */
-        .block-container { padding-top: 2rem; padding-bottom: 2rem; }
-
-        /* Ensure all text defaults to dark (fix black-on-black from some themes) */
-        html, body, [class*="st-"], p, span, div, label {
-            color: var(--text) !important;
+        /* Sidebar */
+        section[data-testid="stSidebar"]{
+            background:var(--surface-2) !important;
+            border-right:1px solid rgba(15,23,42,0.08) !important;
+        }
+        section[data-testid="stSidebar"] h1,
+        section[data-testid="stSidebar"] h2,
+        section[data-testid="stSidebar"] h3,
+        section[data-testid="stSidebar"] p,
+        section[data-testid="stSidebar"] label,
+        section[data-testid="stSidebar"] span,
+        section[data-testid="stSidebar"] div{
+            color:var(--text) !important;
         }
 
-        /* Titles */
-        .big-title {
-            font-size: 54px;
-            font-weight: 900;
-            margin-bottom: 4px;
-            color: var(--text-strong) !important;
-            letter-spacing: -1px;
+        /* Titles (your custom classes) */
+        .big-title{ font-size:54px; font-weight:900; margin-bottom:4px; color:var(--text-strong); letter-spacing:-1px; }
+        .subtitle{ color:var(--text-muted); font-size:16px; margin-bottom:18px; }
+
+        /* Your panels/cards */
+        .panel{
+            border:1px solid var(--border);
+            background:var(--surface);
+            border-radius:var(--r-lg);
+            padding:18px;
+            box-shadow:var(--shadow);
         }
-        .subtitle {
-            color: var(--text-muted) !important;
-            font-size: 16px;
-            margin-bottom: 18px;
+        .kpi-row{ display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-top:8px; }
+        .kpi-card{
+            border:1px solid var(--border);
+            background:var(--surface);
+            border-radius:var(--r-md);
+            padding:18px 18px 14px 18px;
+            box-shadow:var(--shadow);
+            min-height:110px;
         }
-        h1, h2, h3, h4 {
-            letter-spacing: -0.4px;
-            color: var(--text-strong) !important;
+        .kpi-title{ font-size:14px; color:var(--text-muted); margin-bottom:10px; }
+        .kpi-value{ font-size:44px; font-weight:900; line-height:1.0; color:var(--text-strong); }
+        .kpi-sub{ margin-top:10px; font-size:12px; color:rgba(15,23,42,0.55); }
+
+        .cust-card{
+            border:1px solid var(--border);
+            background:var(--surface);
+            border-radius:var(--r-md);
+            padding:16px;
+            margin-bottom:12px;
+            box-shadow:0 8px 18px rgba(15,23,42,0.05);
+        }
+        .muted{ color:var(--text-muted); font-size:13px; }
+        .tag{
+            display:inline-block;
+            padding:4px 10px;
+            border-radius:10px;
+            background:rgba(22,163,74,0.10);
+            color:#166534;
+            border:1px solid rgba(22,163,74,0.22);
+            font-weight:800;
+            font-size:12px;
+            margin-left:8px;
         }
 
-        /* =========================
-           Sidebar
-        ========================= */
-        section[data-testid="stSidebar"] {
-            background: var(--surface-2) !important;
-            border-right: 1px solid var(--border-2) !important;
+        /* Buttons - 최소한만 */
+        button[kind="primary"]{
+            border-radius:12px !important;
+            background:var(--primary) !important;
+            color:#fff !important;
+            border:1px solid rgba(37,99,235,0.25) !important;
         }
-        section[data-testid="stSidebar"] * {
-            color: var(--text) !important;
-        }
-
-        /* =========================
-           Panels / Cards
-        ========================= */
-        .panel {
-            border: 1px solid var(--border);
-            background: var(--surface) !important;
-            border-radius: var(--radius-lg);
-            padding: 18px;
-            box-shadow: var(--shadow);
+        button[kind="secondary"]{
+            border-radius:12px !important;
+            background:#fff !important;
+            color:var(--text) !important;
+            border:1px solid var(--border) !important;
         }
 
-        .kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 8px; }
-        .kpi-card {
-            border: 1px solid var(--border);
-            background: var(--surface) !important;
-            border-radius: var(--radius-md);
-            padding: 18px 18px 14px 18px;
-            box-shadow: var(--shadow);
-            min-height: 110px;
-        }
-        .kpi-title { font-size: 14px; color: var(--text-muted) !important; margin-bottom: 10px; }
-        .kpi-value { font-size: 44px; font-weight: 900; line-height: 1.0; color: var(--text-strong) !important; }
-        .kpi-sub { margin-top: 10px; font-size: 12px; color: rgba(15,23,42,0.55) !important; }
-
-        .cust-card {
-            border: 1px solid var(--border);
-            background: var(--surface) !important;
-            border-radius: var(--radius-md);
-            padding: 16px;
-            margin-bottom: 12px;
-            box-shadow: 0 8px 18px rgba(15,23,42,0.05);
-        }
-        .cust-grid {
-            display: grid;
-            grid-template-columns: 1.3fr 1.8fr 1fr 0.9fr;
-            gap: 10px;
-            align-items: center;
-        }
-
-        .muted { color: var(--text-muted) !important; font-size: 13px; }
-
-        /* Tag - make contrast clear */
-        .tag {
-            display: inline-block;
-            padding: 4px 10px;
-            border-radius: 10px;
-            background: rgba(22, 163, 74, 0.10) !important;
-            color: #166534 !important; /* green-800 */
-            border: 1px solid rgba(22, 163, 74, 0.22) !important;
-            font-weight: 800;
-            font-size: 12px;
-            margin-left: 8px;
-        }
-
-        /* =========================
-           Streamlit widgets (critical)
-           Fix: some widgets inherit dark theme styles and become black-on-black.
-        ========================= */
-
-        /* Inputs (selectbox, text_input, multiselect, etc.) */
-        div[data-baseweb="input"] input,
-        div[data-baseweb="textarea"] textarea {
-            background: #ffffff !important;
-            color: var(--text) !important;
-            border: 1px solid var(--border) !important;
-            border-radius: 12px !important;
-        }
-
-        /* Selectbox / Multiselect */
-        div[data-baseweb="select"] > div {
-            background: #ffffff !important;
-            color: var(--text) !important;
-            border: 1px solid var(--border) !important;
-            border-radius: 12px !important;
-        }
-        div[data-baseweb="select"] span {
-            color: var(--text) !important;
-        }
-
-        /* Dropdown menu */
-        ul[role="listbox"] {
-            background: #ffffff !important;
-            color: var(--text) !important;
-            border: 1px solid var(--border) !important;
-        }
-        ul[role="listbox"] * {
-            color: var(--text) !important;
-        }
-
-        /* Slider */
-        div[data-testid="stSlider"] * {
-            color: var(--text) !important;
-        }
-
-        /* Buttons */
-        button[kind="secondary"], button[kind="primary"] {
-            border-radius: 12px !important;
-        }
-        /* Make secondary button readable on white */
-        button[kind="secondary"] {
-            background: #ffffff !important;
-            color: var(--text) !important;
-            border: 1px solid var(--border) !important;
-        }
-        /* Primary button readable */
-        button[kind="primary"] {
-            background: var(--primary) !important;
-            color: #ffffff !important;
-            border: 1px solid rgba(37,99,235,0.25) !important;
-        }
-
-        /* Metric component */
-        div[data-testid="stMetric"] {
+        /* File uploader - 다크 박스 제거 핵심 */
+        div[data-testid="stFileUploader"]{
             background: transparent !important;
         }
-        div[data-testid="stMetric"] * {
-            color: var(--text) !important;
+        div[data-testid="stFileUploader"] section{
+            background:#ffffff !important;
+            border:1px dashed rgba(15,23,42,0.25) !important;
+            border-radius:14px !important;
+            color:var(--text) !important;
         }
-        div[data-testid="stMetric"] label {
-            color: var(--text-muted) !important;
-        }
-
-        /* Dataframe/table */
-        .stDataFrame, .stTable {
-            background: #ffffff !important;
-            color: var(--text) !important;
+        div[data-testid="stFileUploader"] *{
+            color:var(--text) !important;
         }
 
-        /* Alerts */
-        div[data-testid="stAlert"] {
-            border-radius: 14px !important;
+        /* Selectbox / input - 배경만 흰색 고정 (과한 전체 덮기 금지) */
+        div[data-baseweb="select"] > div{
+            background:#fff !important;
+            border:1px solid var(--border) !important;
+            border-radius:12px !important;
+        }
+        div[data-baseweb="input"] input{
+            background:#fff !important;
+            border:1px solid var(--border) !important;
+            border-radius:12px !important;
+            color:var(--text) !important;
         }
 
         </style>
         """,
         unsafe_allow_html=True
     )
+
 
 
 inject_css_light()
@@ -829,4 +758,5 @@ elif st.session_state.page == "detail":
     page_detail(df)
 else:
     page_dashboard(df)
+
 
